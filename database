@@ -1,0 +1,30 @@
+//To create the tables for the messages and likes, you can use the following SQL code://
+CREATE TABLE messages (
+  id SERIAL PRIMARY KEY,
+  message TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE likes (
+  id SERIAL PRIMARY KEY,
+  message_id INTEGER REFERENCES messages(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+//The messages table will store the message content and the time it was created. The likes table will store a reference to the message that was liked, as well as the time the like was created.
+
+To create the trigger that will update the like count for a message, you can use the following SQL code://
+
+CREATE OR REPLACE FUNCTION update_like_count()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE messages
+  SET like_count = (SELECT COUNT(*) FROM likes WHERE message_id = NEW.message_id)
+  WHERE id = NEW.message_id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_like_count
+AFTER INSERT OR DELETE ON likes
+FOR EACH ROW EXECUTE PROCEDURE update_like_count();
